@@ -1,0 +1,13 @@
+# Never commit raw trip data or working copies
+data/raw/
+*.zip
+*-citibike-tripdata*.csv
+**/_work/
+*.duckdb
+*.duckdb.wal
+__MACOSX/
+.DS_Store
+
+# Python
+.venv/
+__pycache__/
