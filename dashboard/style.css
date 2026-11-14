@@ -1,0 +1,27 @@
+/* Reset CSS cơ bản */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; }
+
+/* Header & KPI */
+header { background-color: #2c3e50; color: white; padding: 20px; text-align: center; margin-bottom: 20px; }
+header h1 { margin-bottom: 15px; }
+
+.kpi-container { display: flex; justify-content: center; gap: 20px; }
+.kpi-card { background-color: white; color: #333; padding: 15px 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; min-width: 150px;}
+.kpi-card h3 { font-size: 14px; color: #7f8c8d; margin-bottom: 5px; text-transform: uppercase;}
+.kpi-card p { font-size: 24px; font-weight: bold; color: #2980b9; }
+
+/* Layout */
+main { display: flex; flex-direction: column; gap: 20px; padding: 0 20px 20px 20px; max-width: 1400px; margin: 0 auto; }
+.module { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.module h2 { border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 15px; color: #2c3e50; }
+
+/* Placeholder cho các biểu đồ chưa làm */
+.chart-placeholder { height: 300px; background-color: #ecf0f1; display: flex; align-items: center; justify-content: center; color: #95a5a6; margin-bottom: 15px; border-radius: 5px; }
+
+/* Tooltip */
+.tooltip {
+    position: absolute; background: rgba(0, 0, 0, 0.8); color: #fff; padding: 8px 12px;
+    border-radius: 4px; pointer-events: none; font-size: 13px; opacity: 0; transition: opacity 0.2s;
+    z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}

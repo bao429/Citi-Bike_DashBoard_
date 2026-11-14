@@ -188,7 +188,10 @@ def main():
     """)
     H("2. Row counts and types")
     T("SELECT regexp_extract(filename, '[^/\\\\]+$') AS file, file_month, count(*) AS rows FROM raw GROUP BY ALL ORDER BY 1")
-    n_raw = con.sql("SELECT count(*) FROM raw").fetchone()[0]
+    
+    # ĐÃ SỬA: fetchone() -> fetchall()[0]
+    n_raw = con.sql("SELECT count(*) FROM raw").fetchall()[0][0]
+    
     facts["rows_raw"] = n_raw
     P(f"\n**Total rows: {n_raw:,}**\n")
     P("Column types used for loading (all station IDs are read as text on purpose):\n")
@@ -346,7 +349,10 @@ def main():
                  count(*) FILTER (keep AND f_no_end) AS kept_but_no_end_station,
                  count(*) FILTER (keep_od) AS kept_with_both_stations
           FROM trips""")
-    kept, kept_od = con.sql("SELECT count(*) FILTER (keep), count(*) FILTER (keep_od) FROM trips").fetchone()
+    
+    # ĐÃ SỬA: fetchone() -> fetchall()[0]
+    kept, kept_od = con.sql("SELECT count(*) FILTER (keep), count(*) FILTER (keep_od) FROM trips").fetchall()[0]
+    
     facts.update(kept_trips=kept, kept_od=kept_od)
     P("\n`kept_trips` feed departures and daily counts; `kept_with_both_stations` feed arrivals and routes.")
 
@@ -398,7 +404,9 @@ def main():
         ORDER BY member_type, day_type, trips DESC, start_station_id, end_station_id
     """)
     # sanity: arrivals/departures must reconcile with the trip table
-    dep_sum, arr_sum = con.sql("SELECT sum(departures), sum(arrivals) FROM station_hourly").fetchone()
+    # ĐÃ SỬA: fetchone() -> fetchall()[0]
+    dep_sum, arr_sum = con.sql("SELECT sum(departures), sum(arrivals) FROM station_hourly").fetchall()[0]
+    
     assert dep_sum == kept and arr_sum == kept_od, (dep_sum, arr_sum, kept, kept_od)
 
     H("10. Summary tables for the browser")
@@ -410,7 +418,10 @@ def main():
         con.execute(f"COPY {name} TO '{path}' (HEADER, DELIMITER ',')")
         raw_bytes = open(path, "rb").read()
         gz = len(gzip.compress(raw_bytes, 9))
-        rows = con.sql(f"SELECT count(*) FROM {name}").fetchone()[0]
+        
+        # ĐÃ SỬA: fetchone() -> fetchall()[0]
+        rows = con.sql(f"SELECT count(*) FROM {name}").fetchall()[0][0]
+        
         sizes[name] = dict(rows=rows, bytes=len(raw_bytes), gzip_bytes=gz)
         P(f"| summary/{name}.csv | {rows:,} | {human(len(raw_bytes))} | {human(gz)} |")
     facts["summary"] = sizes
