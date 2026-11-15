@@ -3,64 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Citi Bike Dashboard</title>
-    <!-- Thư viện D3.js -->
+    <title>Citi Bike Usage Over Time</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <!-- CSS chung -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- HEADER & KPI -->
-    <header>
-        <h1>Citi Bike Dashboard (Jersey City 2025)</h1>
-        <div class="kpi-container">
-            <div class="kpi-card">
-                <h3>Total Trips</h3>
-                <p id="kpi-total-trips">Loading...</p>
-            </div>
-            <div class="kpi-card">
-                <h3>Avg Duration</h3>
-                <p id="kpi-avg-duration">Loading...</p>
-            </div>
-            <div class="kpi-card">
-                <h3>Member Share</h3>
-                <p id="kpi-member-share">Loading...</p>
-            </div>
+    <h1 class="main-title">Citi Bike Usage Over Time</h1>
+
+    <!-- THANH BỘ LỌC -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label>Month:</label>
+            <!-- Mặc định chọn sẵn 4 tháng -->
+            <button class="filter-btn month-btn active" data-month="2025-01">Jan</button>
+            <button class="filter-btn month-btn active" data-month="2025-04">Apr</button>
+            <button class="filter-btn month-btn active" data-month="2025-07">Jul</button>
+            <button class="filter-btn month-btn active" data-month="2025-10">Oct</button>
         </div>
-    </header>
+        <div class="filter-group">
+            <label>Bike Type:</label>
+            <button class="filter-btn active">All</button>
+        </div>
+    </div>
 
-    <!-- MAIN CONTENT: CHIA 3 KHU VỰC -->
-    <main>
-        <!-- KHU VỰC CỦA TV2 -->
-        <section class="module" id="module-user">
-            <h2>User Type Analysis</h2>
-            <div id="tv2-bar-chart" class="chart-placeholder">[TV2: Bar Chart]</div>
-            <div id="tv2-box-plot" class="chart-placeholder">[TV2: Box Plot]</div>
-        </section>
+    <!-- THẺ KPI -->
+    <div class="kpi-row">
+        <div class="kpi-card">
+            <span class="kpi-title">Total Trips</span>
+            <span class="kpi-value" id="kpi-total-trips">--</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-title">Average Trip Duration</span>
+            <span class="kpi-value" id="kpi-avg-duration">--</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-title">Peak Hour</span>
+            <span class="kpi-value" id="kpi-peak-hour">--</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-title">Busiest Day</span>
+            <span class="kpi-value" id="kpi-busiest-day">--</span>
+        </div>
+    </div>
 
-        <!-- KHU VỰC CỦA TV3 (BẠN) -->
-        <section class="module" id="module-temporal">
-            <h2>Temporal Analysis</h2>
-            <div id="tv3-line-chart"></div>
-            <div id="tv3-bar-chart"></div>
-        </section>
+    <!-- BIỂU ĐỒ -->
+    <div class="charts-layout">
+        <div class="chart-container full-width">
+            <h3>Number of trips per day</h3>
+            <div id="chart-daily"></div>
+        </div>
 
-        <!-- KHU VỰC CỦA TV4 -->
-        <section class="module" id="module-route">
-            <h2>Station & Route Analysis</h2>
-            <div id="tv4-map" class="chart-placeholder">[TV4: Leaflet Map]</div>
-            <div id="tv4-route-chart" class="chart-placeholder">[TV4: Top Routes]</div>
-        </section>
-    </main>
+        <div class="chart-container half-width">
+            <h3>Trips by hour of day</h3>
+            <div id="chart-hourly"></div>
+        </div>
 
-    <!-- TOOLTIP DÙNG CHUNG -->
+        <div class="chart-container half-width">
+            <h3>Trips by month</h3>
+            <div id="chart-monthly"></div>
+        </div>
+    </div>
+
+    <!-- TOOLTIP -->
     <div id="tooltip" class="tooltip"></div>
 
-    <!-- NHÚNG CÁC FILE JS -->
-    <script src="main.js"></script>
-    <script src="charts/user_charts.js"></script>
+    <!--
+        main.js hiện CHƯA được include ở đây.
+        Lý do: main.js đang dùng id "kpi-member-share" (không tồn tại trong layout
+        này), trong khi temporal_charts.js đã tự tính đủ 4 KPI (Total Trips, Avg
+        Duration, Peak Hour, Busiest Day) theo đúng bộ lọc tháng đang chọn. Nạp cả
+        2 file cùng lúc sẽ gây trùng/lệch logic KPI. Giữ main.js lại làm tham khảo
+        cho Thành viên 1 khi bạn ấy làm index.html/main.js chính thức cho cả nhóm.
+    -->
     <script src="charts/temporal_charts.js"></script>
-    <script src="charts/route_charts.js"></script>
 </body>
 </html>

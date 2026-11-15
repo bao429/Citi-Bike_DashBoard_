@@ -1,27 +1,28 @@
-/* Reset CSS cơ bản */
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; }
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+body { background-color: #f8f9fa; color: #333; padding: 20px; max-width: 1200px; margin: 0 auto; }
 
-/* Header & KPI */
-header { background-color: #2c3e50; color: white; padding: 20px; text-align: center; margin-bottom: 20px; }
-header h1 { margin-bottom: 15px; }
+.main-title { text-align: center; font-weight: 400; margin-bottom: 25px; color: #2c3e50; font-size: 24px;}
 
-.kpi-container { display: flex; justify-content: center; gap: 20px; }
-.kpi-card { background-color: white; color: #333; padding: 15px 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; min-width: 150px;}
-.kpi-card h3 { font-size: 14px; color: #7f8c8d; margin-bottom: 5px; text-transform: uppercase;}
-.kpi-card p { font-size: 24px; font-weight: bold; color: #2980b9; }
+/* Filter Bar */
+.filter-bar { display: flex; justify-content: flex-start; align-items: center; gap: 40px; background: white; padding: 15px 25px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; }
+.filter-group { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #555;}
+.filter-btn { padding: 6px 18px; border-radius: 20px; border: 1px solid #ccc; background-color: white; color: #666; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+.filter-btn:hover { background-color: #f0f0f0; }
+.filter-btn.active { background-color: #777; color: white; border-color: #777; }
 
-/* Layout */
-main { display: flex; flex-direction: column; gap: 20px; padding: 0 20px 20px 20px; max-width: 1400px; margin: 0 auto; }
-.module { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-.module h2 { border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 15px; color: #2c3e50; }
+/* KPI Cards */
+.kpi-row { display: flex; gap: 15px; margin-bottom: 20px; }
+.kpi-card { flex: 1; background: white; padding: 20px; border-radius: 8px; border: 1px solid #ddd; display: flex; flex-direction: column; }
+.kpi-title { font-size: 13px; color: #666; margin-bottom: 10px; }
+.kpi-value { font-size: 24px; font-weight: bold; color: #333; }
 
-/* Placeholder cho các biểu đồ chưa làm */
-.chart-placeholder { height: 300px; background-color: #ecf0f1; display: flex; align-items: center; justify-content: center; color: #95a5a6; margin-bottom: 15px; border-radius: 5px; }
+/* Charts Layout */
+.charts-layout { display: flex; flex-wrap: wrap; gap: 20px; }
+.chart-container { background: white; padding: 15px 20px; border-radius: 8px; border: 1px solid #ddd; }
+.chart-container h3 { font-size: 15px; font-weight: normal; margin-bottom: 15px; color: #444; }
+.full-width { width: 100%; }
+.half-width { width: calc(50% - 10px); }
 
 /* Tooltip */
-.tooltip {
-    position: absolute; background: rgba(0, 0, 0, 0.8); color: #fff; padding: 8px 12px;
-    border-radius: 4px; pointer-events: none; font-size: 13px; opacity: 0; transition: opacity 0.2s;
-    z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
+.tooltip { position: absolute; background: rgba(0, 0, 0, 0.8); color: #fff; padding: 10px 15px; border-radius: 5px; pointer-events: none; font-size: 13px; opacity: 0; transition: opacity 0.2s; z-index: 1000; text-align: center; line-height: 1.4;}
+.tooltip b { font-size: 15px;}
