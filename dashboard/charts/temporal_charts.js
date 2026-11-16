@@ -1,5 +1,5 @@
 // ==========================================
-// THÀNH VIÊN 3: TEMPORAL ANALYSIS (FINAL - FIXED CASE SENSITIVITY)
+// THÀNH VIÊN 3: TEMPORAL ANALYSIS (FIXED v2)
 // ==========================================
 
 const margin = { top: 20, right: 100, bottom: 40, left: 60 }; 
@@ -18,6 +18,12 @@ const monthStyles = {
     "Oct": { color: "#222222", dash: "0" }         
 };
 
+// FIX (bug chính): bảng tra cứu từ mã tháng "YYYY-MM" (dùng trong
+// selectedMonths và data-month của nút filter) sang tên viết tắt
+// ("Jan","Apr",...) dùng để nhóm/dán nhãn trên chart. Code cũ dùng
+// `sm.includes(m)` để so sánh kiểu "2025-01".includes("Jan") -> LUÔN false,
+// khiến activeMonths/legendData luôn rỗng -> "Trips by month" không bao giờ
+// có cột, và legend của line chart cũng rỗng theo.
 const MONTH_ORDER = [
     { code: "2025-01", short: "Jan" },
     { code: "2025-04", short: "Apr" },
@@ -47,7 +53,7 @@ const svgMonthly = d3.select("#chart-monthly").append("svg")
     .attr("height", heightBar + margin.top + margin.bottom)
     .append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
-// Nhãn nhỏ "Trips" phía trên trục Y
+// Nhãn nhỏ "Trips" phía trên trục Y, giống bản mockup trong proposal
 svgLine.append("text")
     .attr("x", -margin.left + 8)
     .attr("y", -6)
@@ -68,16 +74,17 @@ Promise.all([
             day: dateObj.getDate(), 
             monthStr: d3.timeFormat("%Y-%m")(dateObj),
             monthShort: d3.timeFormat("%b")(dateObj),
-            member_type: d.member_type.toLowerCase(), // FIX: Đưa về chữ thường
+            member_type: d.member_type,
             trips: +d.trips,
             avg_duration: +d.avg_duration_min
         };
     });
 
-    // 2. Xử lý Hourly Data
+    // 2. Xử lý Hourly Data (Gộp lại thành mảng phẳng để dễ tính toán)
+    // File station_hourly.csv có cột month dạng "YYYY-MM"
     hourlyData = files[1].map(d => ({
         monthStr: d.month,
-        member_type: d.member_type.toLowerCase(), // FIX: Đưa về chữ thường
+        member_type: d.member_type,
         hour: +d.hour,
         departures: +d.departures
     }));
@@ -109,9 +116,13 @@ Promise.all([
 // HÀM CẬP NHẬT CHÍNH
 // ==========================================
 function updateDashboard() {
+    // 1. Lọc dữ liệu Daily
     const filteredDaily = dailyData.filter(d => selectedMonths.includes(d.monthStr));
+    
+    // 2. Lọc dữ liệu Hourly
     const filteredHourly = hourlyData.filter(d => selectedMonths.includes(d.monthStr));
 
+    // 3. Cập nhật tất cả
     updateKPIs(filteredDaily, filteredHourly);
     drawLineChart(filteredDaily);
     drawHourlyChart(filteredHourly);
@@ -120,8 +131,11 @@ function updateDashboard() {
 
 
 // ==========================================
-// HÀM PHỤ: GỘP TRIPS THEO NGÀY
+// HÀM PHỤ: GỘP TRIPS CỦA MEMBER + CASUAL THEO TỪNG NGÀY
 // ==========================================
+// daily.csv có 2 dòng cho mỗi ngày (member + casual). Line chart cần TỔNG
+// số chuyến/ngày, nếu vẽ thẳng từ data thô thì đường line sẽ bị "giật" qua
+// lại giữa 2 giá trị member/casual của cùng 1 ngày.
 function aggregateDailyTotals(data) {
     const map = new Map();
     data.forEach(d => {
@@ -165,7 +179,7 @@ function drawLineChart(data) {
     
     paths.enter().append("path").attr("class", "line-path")
         .merge(paths)
-        .style("pointer-events", "none")
+        .style("pointer-events", "none") // không chặn overlay bắt sự kiện hover
         .transition().duration(500)
         .attr("fill", "none")
         .attr("stroke", d => monthStyles[d[0]].color)
@@ -175,7 +189,9 @@ function drawLineChart(data) {
 
     paths.exit().remove();
 
-    // Legend
+    // Cập nhật Legend — dùng MONTH_ORDER (đã fix) để lấy đúng tên tháng đang active,
+    // và dùng .join(enter) để vị trí (translate) của MỌI item (cũ lẫn mới) luôn được
+    // tính lại theo index hiện tại, tránh việc legend bị lệch/xếp sai khi đổi filter.
     const legendData = MONTH_ORDER.filter(m => selectedMonths.includes(m.code)).map(m => m.short);
 
     const legend = svgLine.selectAll(".legend-item").data(legendData, d => d).join(
@@ -190,11 +206,12 @@ function drawLineChart(data) {
         .attr("stroke-dasharray", d => monthStyles[d].dash);
     legend.select("text").text(d => d);
 
+    // Tương tác hover (đường dóng dọc + tooltip) giống mockup trong proposal.
     setupLineChartTooltip(x, y, grouped);
 }
 
 function setupLineChartTooltip(x, y, grouped) {
-    const monthGroups = Array.from(grouped);
+    const monthGroups = Array.from(grouped); // [[monthShort, rows], ...]
 
     const focusLine = svgLine.selectAll(".focus-line").data([null]).join("line")
         .attr("class", "focus-line")
@@ -217,7 +234,7 @@ function setupLineChartTooltip(x, y, grouped) {
         .attr("fill", "none")
         .style("pointer-events", "all");
 
-    overlay.raise();
+    overlay.raise(); // luôn ở trên cùng để bắt hover, kể cả khi có line mới
 
     overlay
         .on("mousemove", function(event) {
@@ -261,7 +278,7 @@ function setupLineChartTooltip(x, y, grouped) {
 
 
 // ==========================================
-// BIỂU ĐỒ 2: HOURLY STACKED BAR CHART (FIXED CASE SENSITIVITY)
+// BIỂU ĐỒ 2: HOURLY STACKED BAR CHART (Member dưới/đậm, Casual trên/nhạt)
 // ==========================================
 function drawHourlyChart(data) {
     const x = d3.scaleBand().domain(d3.range(0, 24)).range([0, (width/2) - 20]).padding(0.2);
@@ -280,6 +297,7 @@ function drawHourlyChart(data) {
         return { hour: hour, member: memberCount, casual: casualCount };
     });
 
+    // d3.stack với keys ["member","casual"] -> member nằm ở lớp dưới, casual lớp trên
     const subGroups = ["member", "casual"];
     const stackedData = d3.stack().keys(subGroups)(flatData);
 
@@ -293,11 +311,21 @@ function drawHourlyChart(data) {
     svgHourly.selectAll(".y-axis").data([null]).join("g")
         .attr("class", "y-axis").transition().duration(500).call(d3.axisLeft(y).tickFormat(d3.format("~s")));
 
-    const layer = svgHourly.selectAll(".layer").data(stackedData, d => d.key).join("g").attr("class", "layer");
-    
-    const rects = layer.selectAll("rect").data(d => d, d => d.data.hour).join("rect")
+    // FIX: d.key chỉ tồn tại trên MẢNG của cả layer (vd layer "member"), không
+    // tồn tại trên từng điểm [y0,y1] bên trong mảng đó. Nếu set "fill" ngay
+    // trên từng <rect> bằng d.key thì d.key luôn là undefined -> luôn rơi vào
+    // "#ccc", khiến mọi cột (cả member lẫn casual) đều ra màu nhạt giống nhau.
+    // Cách đúng: set "fill" trên <g class="layer"> (fill kế thừa được trong
+    // SVG), các <rect> con sẽ tự động nhận đúng màu của layer cha.
+    const layer = svgHourly.selectAll(".layer").data(stackedData, d => d.key).join("g")
+        .attr("class", "layer")
         .attr("fill", d => d.key === "member" ? "#555" : "#ccc");
+    
+    const rects = layer.selectAll("rect").data(d => d).join("rect");
 
+    // FIX: gắn mouseover vào SELECTION chứ không phải vào transition
+    // (transition.on() chỉ nhận start/end/interrupt, không nhận sự kiện chuột).
+    // Tooltip hiện cả Member lẫn Casual cùng lúc.
     rects
         .on("mouseover", function(event, d) {
             tooltip.style("opacity", 1)
@@ -323,9 +351,11 @@ function drawHourlyChart(data) {
 
 
 // ==========================================
-// BIỂU ĐỒ 3: MONTHLY GROUPED BAR CHART
+// BIỂU ĐỒ 3: MONTHLY GROUPED BAR CHART (Member & Casual 2 cột cạnh nhau)
 // ==========================================
 function drawMonthlyChart(data) {
+    // FIX: dùng MONTH_ORDER thay vì "sm.includes(m)" (luôn false) để lấy
+    // đúng danh sách tháng đang active -> đây là nguyên nhân cột bị trống.
     const activeMonths = MONTH_ORDER.filter(m => selectedMonths.includes(m.code)).map(m => m.short);
     
     const x0 = d3.scaleBand().domain(activeMonths).range([0, (width/2) - 20]).paddingInner(0.2);
@@ -389,12 +419,15 @@ function drawMonthlyChart(data) {
 // HÀM CẬP NHẬT KPI
 // ==========================================
 function updateKPIs(daily, hourly) {
+    // 1. Total Trips
     const total = d3.sum(daily, d => d.trips);
     d3.select("#kpi-total-trips").text(d3.format(",")(total));
 
+    // 2. Average Duration
     const avgDur = total > 0 ? d3.sum(daily, d => d.avg_duration * d.trips) / total : 0;
     d3.select("#kpi-avg-duration").text(avgDur.toFixed(1) + " min");
 
+    // 3. Peak Hour
     let hourTotals = {};
     hourly.forEach(d => {
         if (!hourTotals[d.hour]) hourTotals[d.hour] = 0;
@@ -411,6 +444,7 @@ function updateKPIs(daily, hourly) {
     }
     d3.select("#kpi-peak-hour").text(peakHour);
 
+    // 4. Busiest Day
     let dayTotals = {};
     daily.forEach(d => {
         const dateStr = d.date.toDateString();
