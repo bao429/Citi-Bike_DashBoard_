@@ -149,7 +149,14 @@ def main():
     facts = {}           # machine-readable numbers
     H = lambda s: report.append(f"\n## {s}\n")
     P = lambda s: report.append(s)
-    T = lambda sql: report.append("\n" + md_table(con.sql(sql)) + "\n")
+
+    # FIXME: DuckDB's con.sql() returns a Relation, not a ResultSet, so we can't call fetchone() on it. Use con.execute() instead.
+    # T = lambda sql: report.append("\n" + md_table(con.sql(sql)) + "\n")
+    def T(sql):
+        cursor = con.cursor()
+        result = cursor.sql(sql)
+        report.append("\n" + md_table(result) + "\n")
+        cursor.close()
 
     report.append("# Citi Bike preprocessing profile\n")
     P(f"Inputs: {', '.join(os.path.basename(i) for i in args.input)}  ")
@@ -188,7 +195,7 @@ def main():
     """)
     H("2. Row counts and types")
     T("SELECT regexp_extract(filename, '[^/\\\\]+$') AS file, file_month, count(*) AS rows FROM raw GROUP BY ALL ORDER BY 1")
-    n_raw = con.sql("SELECT count(*) FROM raw").fetchone()[0]
+    n_raw = con.execute("SELECT count(*) FROM raw").fetchone()[0]
     facts["rows_raw"] = n_raw
     P(f"\n**Total rows: {n_raw:,}**\n")
     P("Column types used for loading (all station IDs are read as text on purpose):\n")
@@ -196,7 +203,10 @@ def main():
 
     # ---- 3. timestamps ------------------------------------------------------------
     H("3. Timestamp format and time zone evidence")
-    ts = con.sql(f"""
+
+    # FIX: fetch the cursor and execute the query, instead of using con.sql() which returns a Relation
+    ts_cursor = con.cursor()
+    ts_cursor.execute(f"""
         SELECT count(*) AS n,
                count(*) FILTER (regexp_full_match(started_at, '\\d{{4}}-\\d{{2}}-\\d{{2}} \\d{{2}}:\\d{{2}}:\\d{{2}}(\\.\\d+)?')) AS started_iso,
                count(*) FILTER (regexp_full_match(ended_at,   '\\d{{4}}-\\d{{2}}-\\d{{2}} \\d{{2}}:\\d{{2}}:\\d{{2}}(\\.\\d+)?')) AS ended_iso,
@@ -204,8 +214,14 @@ def main():
                any_value(started_at) AS example
         FROM read_csv({sql_list(csvs)}, header=true, all_varchar=true)
     """)
+
+    ts = ts_cursor.fetchone()
+    ts_cursor.close()
     P("Raw text of `started_at` / `ended_at` checked against `YYYY-MM-DD HH:MM:SS(.fff)`:\n")
-    P("\n" + md_table(ts) + "\n")
+    P("| n | started_iso | ended_iso | am_pm_or_offset | example |")
+    P("|---|---|---|---|---|")
+    P("| " + " | ".join(str(v) if v is not None else "" for v in ts) + " |")
+
     P("\nRange of parsed timestamps:\n")
     T("SELECT min(started_at) AS min_started, max(started_at) AS max_started, min(ended_at) AS min_ended, max(ended_at) AS max_ended FROM raw")
     P("\nWhich month does each file hold? (rows whose start/end month differs from the month in the file name)\n")
@@ -323,7 +339,7 @@ def main():
                start_id IS NULL                           AS f_no_start,
                (start_id IS NOT NULL AND NOT is_public(start_id)) OR (end_id IS NOT NULL AND NOT is_public(end_id)) AS f_nonpublic,
                dur_s < 0                                  AS f_negative,
-               start_id = end_id AND dur_s < {args.false_start_sec} AS f_false_start,
+               coalesce(start_id = end_id, FALSE) AND dur_s < {args.false_start_sec} AS f_false_start,
                dur_s > {args.max_duration_min} * 60       AS f_too_long,
                end_id IS NULL                             AS f_no_end
         FROM b
@@ -334,6 +350,13 @@ def main():
         ALTER TABLE trips ADD COLUMN keep_od BOOLEAN;
         UPDATE trips SET keep_od = keep AND NOT f_no_end;
     """)
+
+    # Export cleaned trips to a Parquet file 
+    clean_path = os.path.join(args.out, "trips_clean.parquet")
+    con.execute(f"""COPY (SELECT ride_id, rideable_type, member_type, started_at, ended_at, duration_min,
+            date, month, weekday, hour, is_weekend, start_id, end_id
+            FROM trips WHERE keep) TO '{clean_path}' (FORMAT PARQUET)""")
+
     H("9. Cleaning rules applied (counts are not exclusive; a row can hit several)")
     T(f"""SELECT count(*) FILTER (f_other_month) AS started_outside_file_month,
                  count(*) FILTER (f_no_start) AS no_start_station,
@@ -346,7 +369,7 @@ def main():
                  count(*) FILTER (keep AND f_no_end) AS kept_but_no_end_station,
                  count(*) FILTER (keep_od) AS kept_with_both_stations
           FROM trips""")
-    kept, kept_od = con.sql("SELECT count(*) FILTER (keep), count(*) FILTER (keep_od) FROM trips").fetchone()
+    kept, kept_od = con.execute("SELECT count(*) FILTER (keep), count(*) FILTER (keep_od) FROM trips").fetchone()
     facts.update(kept_trips=kept, kept_od=kept_od)
     P("\n`kept_trips` feed departures and daily counts; `kept_with_both_stations` feed arrivals and routes.")
 
@@ -398,7 +421,7 @@ def main():
         ORDER BY member_type, day_type, trips DESC, start_station_id, end_station_id
     """)
     # sanity: arrivals/departures must reconcile with the trip table
-    dep_sum, arr_sum = con.sql("SELECT sum(departures), sum(arrivals) FROM station_hourly").fetchone()
+    dep_sum, arr_sum = con.execute("SELECT sum(departures), sum(arrivals) FROM station_hourly").fetchone()
     assert dep_sum == kept and arr_sum == kept_od, (dep_sum, arr_sum, kept, kept_od)
 
     H("10. Summary tables for the browser")
@@ -410,7 +433,7 @@ def main():
         con.execute(f"COPY {name} TO '{path}' (HEADER, DELIMITER ',')")
         raw_bytes = open(path, "rb").read()
         gz = len(gzip.compress(raw_bytes, 9))
-        rows = con.sql(f"SELECT count(*) FROM {name}").fetchone()[0]
+        rows = con.execute(f"SELECT count(*) FROM {name}").fetchone()[0]
         sizes[name] = dict(rows=rows, bytes=len(raw_bytes), gzip_bytes=gz)
         P(f"| summary/{name}.csv | {rows:,} | {human(len(raw_bytes))} | {human(gz)} |")
     facts["summary"] = sizes

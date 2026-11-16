@@ -1,0 +1,44 @@
+{
+  "columns": [
+    "ride_id",
+    "rideable_type",
+    "started_at",
+    "ended_at",
+    "start_station_name",
+    "start_station_id",
+    "end_station_name",
+    "end_station_id",
+    "start_lat",
+    "start_lng",
+    "end_lat",
+    "end_lng",
+    "member_casual"
+  ],
+  "rows_raw": 344095,
+  "kept_trips": 342730,
+  "kept_od": 341577,
+  "summary": {
+    "stations": {
+      "rows": 337,
+      "bytes": 15679,
+      "gzip_bytes": 5897
+    },
+    "station_hourly": {
+      "rows": 83404,
+      "bytes": 2496306,
+      "gzip_bytes": 328930
+    },
+    "daily": {
+      "rows": 246,
+      "bytes": 8103,
+      "gzip_bytes": 2414
+    },
+    "routes": {
+      "rows": 400,
+      "bytes": 14198,
+      "gzip_bytes": 3111
+    }
+  },
+  "raw_csv_bytes": 74824266,
+  "runtime_s": 4.2
+}

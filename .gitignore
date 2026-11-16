@@ -11,3 +11,6 @@ __MACOSX/
 # Python
 .venv/
 __pycache__/
+
+data/processed/trips_clean.parquet
+data/processed/_work/

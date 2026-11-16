@@ -1,0 +1,3 @@
+member_type,trips,pct_trips,mean_min,median_min,p25_min,p75_min,p90_min,p95_min,p99_min,pct_weekend
+casual,75133,21.9,13.08,7.94,5.3,13.46,26.29,42.23,89.89,32.8
+member,267597,78.1,7.48,5.52,3.69,8.49,13.5,18.68,40.37,20.7

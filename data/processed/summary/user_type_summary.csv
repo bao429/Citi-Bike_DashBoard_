@@ -1,0 +1,17 @@
+month,day_type,member_type,trips,total_duration_min
+2025-01,weekday,casual,4706,38944.6
+2025-01,weekday,member,35075,224276.39
+2025-01,weekend,casual,1993,18857.17
+2025-01,weekend,member,8706,60839.12
+2025-04,weekday,casual,11741,145943.12
+2025-04,weekday,member,51439,361522.72
+2025-04,weekend,casual,5500,93177.48
+2025-04,weekend,member,12517,103373.82
+2025-07,weekday,casual,18537,243730.54
+2025-07,weekday,member,62074,476797.48
+2025-07,weekend,casual,9379,167105.47
+2025-07,weekend,member,17214,159372.24
+2025-10,weekday,casual,15477,163687.02
+2025-10,weekday,member,63578,467992.71
+2025-10,weekend,casual,7800,111524.84
+2025-10,weekend,member,16994,146718.87
